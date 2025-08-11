@@ -1,0 +1,117 @@
+<div class="container">
+  {% assign tab1_images = section.blocks | where: "settings.tab", "tab1" %}
+  {% assign tab2_images = section.blocks | where: "settings.tab", "tab2" %}
+  {% assign tab3_images = section.blocks | where: "settings.tab", "tab3" %}
+  {% assign tab4_images = section.blocks | where: "settings.tab", "tab4" %}
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="tab1">{{ section.settings.tab1_title }}</button>
+    <button class="tab-btn" data-tab="tab2">{{ section.settings.tab2_title }}</button>
+    <button class="tab-btn" data-tab="tab3">{{ section.settings.tab3_title }}</button>
+    <button class="tab-btn" data-tab="tab4">{{ section.settings.tab4_title }}</button>
+  </div>
+
+  <div class="tab-content tab1 active">
+    {% for block in tab1_images %}
+      <div class="gallery-slide">
+        <img src="{{ block.settings.image | img_url: 'medium' }}" alt="">
+        <p>{{ block.settings.caption }}</p>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="tab-content tab2">
+    {% for block in tab2_images %}
+      <div class="gallery-slide">
+        <img src="{{ block.settings.image | img_url: 'medium' }}" alt="">
+        <p>{{ block.settings.caption }}</p>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="tab-content tab3">
+    {% for block in tab3_images %}
+      <div class="gallery-slide">
+        <img src="{{ block.settings.image | img_url: 'medium' }}" alt="">
+        <p>{{ block.settings.caption }}</p>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="tab-content tab4">
+    {% for block in tab4_images %}
+      <div class="gallery-slide">
+        <img src="{{ block.settings.image | img_url: 'medium' }}" alt="">
+        <p>{{ block.settings.caption }}</p>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+<!-- Repeat for tab3 and tab4 -->
+
+{% schema %}
+{
+  "name": "Tabbed Gallery",
+  "settings": [
+    {
+      "type": "text",
+      "id": "tab1_title",
+      "label": "Tab 1 Title",
+      "default": "Tab 1"
+    },
+    {
+      "type": "text",
+      "id": "tab2_title",
+      "label": "Tab 2 Title",
+      "default": "Tab 2"
+    },
+    {
+      "type": "text",
+      "id": "tab3_title",
+      "label": "Tab 3 Title",
+      "default": "Tab 3"
+    },
+    {
+      "type": "text",
+      "id": "tab4_title",
+      "label": "Tab 4 Title",
+      "default": "Tab 4"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "gallery_image",
+      "name": "Gallery Image",
+      "settings": [
+        {
+          "type": "select",
+          "id": "tab",
+          "label": "Select Tab",
+          "options": [
+            { "value": "tab1", "label": "Tab 1" },
+            { "value": "tab2", "label": "Tab 2" },
+            { "value": "tab3", "label": "Tab 3" },
+            { "value": "tab4", "label": "Tab 4" }
+          ]
+        },
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "Image"
+        },
+        {
+          "type": "text",
+          "id": "caption",
+          "label": "Caption"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Tabbed Gallery",
+      "category": "Custom"
+    }
+  ]
+}
+{% endschema %}

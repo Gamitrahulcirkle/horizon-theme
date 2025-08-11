@@ -1,0 +1,88 @@
+<div>
+#1 Shopify General Shopify CLI Commands
+
+1. shopify auth logout => Logs out from your shopify account/store
+2. shopify commands => Lists all available Shopify CLI commands
+3. shopify config autocorrect on/off/status => Enable or disables autocorrection for mistyped commands.
+4. shopify help => Shows help information and command reference.
+5. shopify search => Searches documentation on shopify.dev.
+6. shopify upgrade => Provides upgrade instruction for CLI
+7. shopify version => show your currenct CLI version
+
+
+#2 Shopify theme development most important commands list
+
+1. shopify theme check => validate the theme
+2. shopify theme console => Shopify liquid REPL( read-eval-print loop ) tool
+3. shopify theme delete => Delete remote themes from the connected store. This command can't be undone.
+4. shopify theme dev => Uploads the current theme as a development theme to the connected store, then prints theme editor and preview URLs to your terminal. While running, changes will push to store in real time.
+5. shopify theme info => Display information about your theme environment, including your current store. Can also retrvie information about a specific theme.
+6. shopify theme init => Clones a Git repository to use as a starting point for building a new theme.
+7. shopify language-server => Start a Language server Protocol server.
+8. shopify theme list => Lists theme themes in your store, along with their IDs and statuses.
+9. shopify theme open => Opens the preview of your remote theme.
+10.shopify theme package => Package your theme into a .zip file, ready to upload to the online store.
+11.shopify theme profile => Profile the liauid rendering of a theme page.
+12.shopify theme publish => Set a remote theme as the live theme.
+13.shopify theme pull => Download your remote theme files locally.
+14 shopify theme push => upload your local theme files to the connected store, overwriting the remote version if specified.
+15.shopify theme rename => Rename as existing theme.
+16.shopify theme share => Createds a shareable, unpublished, and new theme on your theme library with randomized name. 
+
+#3 Shopify App CLI-- Key Commands
+
+1. shopify app init => Scaffolds a new app project, optionally using a template or GitHub URL.
+2. shopify app build => Executes the build script defined in your app's configuation file, for theme app extension, runs Theme Check validation.
+3. shopify app config link => Pulls configuration settings from the Partner Dashboard into your project(TOML file).
+4. shopify app config use => Sets the default configuaration file for app CLI operation, prompts if multiple are avialable.
+5. shopify app dev => Builds and previews your app in a development or sandbox store. It manages tunnel creation, app installation, and live preview via Shopify.
+6. shopify app dev clean => Stops the running dev preview and reverts the app to its previously active version.
+7. shopify app env pull => Generates or updates your .env file with environment variables for your app and extensions.
+8. shopify app env show => Display the current environment varianbles configured in your project.
+
+#4 App Function-related commands( For Shopify Functions )
+
+1. shopify app function build => compiles to WebAssembly
+2. shopify app funciton run / replay => executes or replays the function locally.
+3. shopify app function schema => generates GraphQL schema file.
+4. shopify app function typegen => generates the GraphQL types based on quries.
+5. shopify app generate extension => Creates a new app extesion scaffolding( UI extesion, function ).
+6. shopify app import-extesions => Imports extensions that are managed via your Shopify Partner Dashboard into your local project.
+7. shopify app info => Displays details like associated development store, project structure, CLI version, access scopes, and more.
+8. shopofy app logs sources => Lists available log sources, particularly useful for filtering logs from Function extensions.
+9. shopify app logs => Stream real-time logs from your app. Supports filtering by source and status ( sucess, failure ).
+10 shopify app release => Publishes a specific app version( snapshot of configuration and extensions ) for release.
+11.shopify app versions list => Lists app previously deployed app versions.
+12.shopify app deploy => Builds and deploys your app configuation and extensions as a new version to shopfy but you will need to host the web app separately,
+13.shopify app webhook trigger => Manually triggers a sample admin API event to test webhook handling( useful for debugging and testing endpoints ).
+
+#5 Git Most Important Commands List
+
+1. git init → Initializes a new Git repository in the current directory.
+2. git clone <repo-url> → Clones a remote repository to your local machine.
+3. git status → Shows the current state of the working directory and staging area.
+4. git add <file> → Stages changes for the next commit.
+5. git add . → Stages all changes in the current directory.
+6. git commit -m "message" → Records staged changes with a descriptive message.
+7. git commit -am "message" → Adds and commits all tracked changes in one step.
+8. git log → Displays the commit history for the repository.
+9. git diff → Shows changes between commits, working tree, and index.
+10.git branch → Lists branches; highlights the current one.
+11.git branch <branch-name> → Creates a new branch.
+12.git checkout <branch-name> → Switches to a different branch.
+13.git checkout -b <branch-name> → Creates and switches to a new branch.
+14.git merge <branch-name> → Merges the specified branch into the current branch.
+15.git pull → Fetches and integrates changes from the remote repository into the current branch.
+16.git push → Uploads local branch commits to the remote repository.
+17.git remote -v → Displays remote repositories linked to the project.
+18.git fetch → Downloads objects and refs from a remote repository without merging.
+19.git reset <file> → Unstages a file without discarding changes.
+20.git reset --hard → Resets the working directory and index to a specific commit, discarding all changes.
+21.git revert <commit> → Creates a new commit that undoes the changes made by the specified commit.
+22.git stash → Temporarily stores uncommitted changes.
+23.git stash pop → Restores stashed changes and removes them from stash.
+24.git tag <tag-name> → Creates a tag for a specific commit (commonly for releases).
+25.git config --global user.name "Your Name" → Sets your Git username globally.
+26.git config --global user.email "you@example.com" → Sets your Git email globally.
+27.git show <commit> → Displays information about a specific commit.
+</div>
