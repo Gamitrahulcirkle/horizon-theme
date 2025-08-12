@@ -147,6 +147,23 @@ class ProductFormComponent extends Component {
     this.#abortController.abort();
   }
 
+  /** 
+   * upsell product id append with main product ID
+   * 
+   * @param {newData} newData - main product Form Data 
+  */
+  
+  upsellProductAdd(newData){
+    let upsellCheckbox = document.querySelector(".upsell-checkbox");
+
+    if (upsellCheckbox && upsellCheckbox.checked) {
+      let upsellId = upsellCheckbox.value;
+      if (!upsellId) return;
+
+      newData.append('items[1][id]', upsellId);
+      newData.append('items[1][quantity]', 1);
+    }
+  }
   /**
    * Handles the submit event for the product form.
    *
@@ -169,6 +186,7 @@ class ProductFormComponent extends Component {
 
     const formData = new FormData(form);
 
+    this.upsellProductAdd(formData);
     const cartItemsComponents = document.querySelectorAll('cart-items-component');
     let cartItemComponentsSectionIds = [];
     cartItemsComponents.forEach((item) => {
@@ -177,6 +195,9 @@ class ProductFormComponent extends Component {
       }
       formData.append('sections', cartItemComponentsSectionIds.join(','));
     });
+
+    console.log("formData =>");
+    console.log(formData);
 
     const fetchCfg = fetchConfig('javascript', { body: formData });
 

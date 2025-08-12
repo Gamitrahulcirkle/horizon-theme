@@ -1,0 +1,20 @@
+{% render 'upsell-product', product: block.settings.product %}
+
+{% schema %}
+{
+  "name": "Upsell-product",
+  "tag": null,
+  "settings": [
+    {
+      "type": "product",
+      "id": "product",
+      "label": "Upsell product"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Upsell product"
+    }
+  ]
+}
+{% endschema %}
