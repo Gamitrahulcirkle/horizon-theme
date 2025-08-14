@@ -152,7 +152,9 @@
       <!-- Main Product -->
       <div class="bundle-main">
         {% if product.featured_image != blank %}
-          {{ product.featured_image | image_url: width:product.featured_image.width | image_tag: class:"bundle-image" }}
+          <div data-variant-img-id="{{ product.first_available_variant.id }}">
+            {{ product.featured_image | image_url: width:product.featured_image.width | image_tag: class:"bundle-image" }}
+          </div>
         {% endif %}
         <div class="bundle-details">
           <h3>{{ product.title }}</h3>
@@ -166,7 +168,7 @@
         {% for product in section.settings.product_list %}
           <div class="bundle-item">
             <input type="checkbox" class="bundle-checkbox" data-variant_id="{{ product.first_available_variant.id }}" data-price="{{ product.price | money_without_currency }}" id="bundle{{ forloop.index }}" {% if forloop.first %}checked{% endif %}>
-            <label for="bundle{{ forloop.index }}">
+            <label for="bundle{{ forloop.index }}" data-variant-img-id="{{ product.first_available_variant.id }}">
               {% if product.featured_image != blank %}
                 {{ product.featured_image | image_url: width:product.featured_image.width | image_tag }}
                {% endif %}
@@ -214,7 +216,54 @@
     checkboxes.forEach(cb => cb.addEventListener("change", updateTotal));
     updateTotal();
 
-    document.querySelector('#bundle_add_to_cart').addEventListener("click", function () {
+    function addSingleItem( item ){
+      return fetch('/cart/add.js', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(item)
+      }).then(res => res.json());
+    }
+
+    function animateProductToCart(variantId) {
+      const cartIcon = document.querySelector('.header-actions__cart-icon');      
+      const imgEl = document.querySelector(`[data-variant-img-id="${variantId}"] img`);
+      const productImage = imgEl ? imgEl.src : null;
+      const addToCartButton = document.querySelector('#bundle_add_to_cart');
+      const image = productImage;
+
+      if (!cartIcon || !addToCartButton || !image) return;
+
+      const flyToCartElement = /** @type {FlyToCart} */ (document.createElement('fly-to-cart'));
+      flyToCartElement.style.setProperty('background-image', `url(${image})`);
+      flyToCartElement.source = addToCartButton;
+      flyToCartElement.destination = cartIcon;
+
+      document.body.appendChild(flyToCartElement);
+    }
+
+    async function updateCountIcon(){      
+      const cart = await fetch('/cart.js').then(res => res.json());
+      import('@theme/events').then(({ CartUpdateEvent }) => {
+        const event = new CartUpdateEvent(cart, 'manual-trigger', {
+          itemCount: cart.item_count
+        });
+        document.dispatchEvent(event);
+      });
+    }
+    
+    async function addItemsSequentially(items){
+      for (const item of items) {        
+        await addSingleItem(item);
+        await animateProductToCart(item.id);
+        await updateCountIcon();
+        //await addSingleItem(item);
+        //await animateProductToCart(item.id);
+      }
+    }
+    document.querySelector('#bundle_add_to_cart').addEventListener("click", async function () {
       const items = Array.from(checkboxes)
       .filter(cb => cb.checked)
       .map(cb => ({
@@ -232,7 +281,24 @@
         alert("Please select at least one product for the bundle.");
         return;
       }
+      await addItemsSequentially(items);
+      
+      import('@theme/events').then(({ CartUpdateEvent }) => {
+        const cartDrawer = document.querySelector('cart-drawer-component');
+        fetch('/cart.js')
+        .then(res => res.json())
+        .then(cart => {
+          const event = new CartUpdateEvent(cart, 'manual-trigger', {
+            itemCount: cart.item_count,
+            source: 'fad-refresh',
+            sections: {}
+          });
+          document.dispatchEvent(event);
+          setTimeout(function(){ cartDrawer.open() }, 500);
+        });
+      });
 
+      return;
       fetch('/cart/add.js', {
         method: 'POST',
         headers: {
@@ -261,7 +327,7 @@
       .catch(err => console.error('Bundle add error:', err));
     });
   });
-
+  
 </script>
 
 {% schema %}

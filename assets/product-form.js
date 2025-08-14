@@ -72,11 +72,10 @@ export class AddToCartComponent extends Component {
    * Animates the fly to cart animation.
    */
   #animateFlyToCart() {
-    const { addToCartButton } = this.refs;
+    const { addToCartButton } = this.refs;    
     const cartIcon = document.querySelector('.header-actions__cart-icon');
-
     const image = this.dataset.productVariantMedia;
-
+    
     if (!cartIcon || !addToCartButton || !image) return;
 
     const flyToCartElement = /** @type {FlyToCart} */ (document.createElement('fly-to-cart'));
@@ -84,7 +83,7 @@ export class AddToCartComponent extends Component {
     flyToCartElement.style.setProperty('background-image', `url(${image})`);
     flyToCartElement.source = addToCartButton;
     flyToCartElement.destination = cartIcon;
-
+    
     document.body.appendChild(flyToCartElement);
   }
 
@@ -151,8 +150,7 @@ class ProductFormComponent extends Component {
    * upsell product id append with main product ID
    * 
    * @param {newData} newData - main product Form Data 
-  */
-  
+  */  
   upsellProductAdd(newData){
     let upsellCheckbox = document.querySelector(".upsell-checkbox");
 
@@ -164,6 +162,7 @@ class ProductFormComponent extends Component {
       newData.append('items[1][quantity]', 1);
     }
   }
+
   /**
    * Handles the submit event for the product form.
    *
