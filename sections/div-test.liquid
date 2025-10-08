@@ -189,7 +189,7 @@
       <p>Total:</p>
       <span id="bundle-total">{{ product.price | money_with_currency }}</span>
     </div>
-    <button class="bundle-button" id="bundle_add_to_cart">Add Bundle to Cart</button>
+    <button class="bundle-button" id="bundle_add_to_cart">Bundle Add to Cart</button>
   </div>
 </div>
 
@@ -228,7 +228,7 @@
     }
 
     function animateProductToCart(variantId) {
-      const cartIcon = document.querySelector('.header-actions__cart-icon');      
+      const cartIcon = document.querySelector('.header-actions__cart-icon'); //      
       const imgEl = document.querySelector(`[data-variant-img-id="${variantId}"] img`);
       const productImage = imgEl ? imgEl.src : null;
       const addToCartButton = document.querySelector('#bundle_add_to_cart');
@@ -264,6 +264,10 @@
       }
     }
     document.querySelector('#bundle_add_to_cart').addEventListener("click", async function () {
+      console.log(this.textContent);
+      this.setAttribute('disabled', 'true');
+      this.textContent = 'Bundle product Adding...';
+      
       const items = Array.from(checkboxes)
       .filter(cb => cb.checked)
       .map(cb => ({
@@ -296,6 +300,11 @@
           document.dispatchEvent(event);
           setTimeout(function(){ cartDrawer.open() }, 500);
         });
+        let bundleATCBtn = document.querySelector('#bundle_add_to_cart');
+        if(bundleATCBtn){
+          bundleATCBtn.removeAttribute('disabled');
+          bundleATCBtn.textContent = 'Bundle Add to Cart'; 
+        }
       });
 
       return;

@@ -3,6 +3,7 @@
 {% liquid
   # Onboarding: When no products are available, we show placeholder items
   assign products = ''
+  echo request.design_mode
   if request.design_mode and shop.products_count == 0
     for i in (1..16)
       assign products = products | append: ' ,'
