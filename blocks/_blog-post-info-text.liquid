@@ -4,30 +4,40 @@
 
   @param {object} [article] - The article object
   @param {string} [alignment] - The alignment of the text. Defaults to the block's alignment setting.
+  @param {string} [author] - The author name. Defaults to article.author, placeholder text for onboarding
+  @param {string} [date] - The published date. Defaults to article.published_at, placeholder text for onboarding
 {%- enddoc -%}
 
-{% assign alignment = alignment | default: block.settings.alignment %}
+{% assign block_settings = block.settings %}
+{% assign alignment = alignment | default: block_settings.alignment %}
+{% assign display_author = author | default: article.author %}
+{% assign display_date = date | default: article.published_at %}
 
-{%- if block.settings.show_date or block.settings.show_author -%}
+{%- if block_settings.show_date or block_settings.show_author -%}
   <div
     class="
       blog-post-details
       spacing-style
       justify-{{ alignment }}
-      {% if block.settings.type_preset != '' %}{{ block.settings.type_preset }}{% endif%}
+      {% if block_settings.type_preset != '' %}{{ block_settings.type_preset }}{% endif%}
     "
-    style="{% render 'spacing-style', settings: block.settings %}"
+    style="
+      {% render 'spacing-style', settings: block_settings %}
+      {% if block_settings.text_color != blank %}
+        --color-details: {{ block_settings.text_color }};
+      {% endif %}
+    "
   >
-    {%- if block.settings.show_date -%}
-      <span>{{- article.published_at | time_tag: format: 'date' -}}</span>
+    {%- if block_settings.show_date -%}
+      <span>{{- display_date | time_tag: format: 'date' -}}</span>
     {%- endif -%}
 
-    {%- if block.settings.show_date and block.settings.show_author -%}
+    {%- if block_settings.show_date and block_settings.show_author -%}
       <span>{{ 'content.blog_details_separator' | t }}</span>
     {%- endif -%}
 
-    {%- if block.settings.show_author -%}
-      <span>{{ article.author }}</span>
+    {%- if block_settings.show_author -%}
+      <span>{{ display_author }}</span>
     {%- endif -%}
   </div>
 {% endif %}
@@ -36,10 +46,12 @@
   .blog-post-details {
     display: flex;
     gap: var(--gap-sm);
-    font-size: var(--font-size--paragraph);
-    color: rgb(from var(--color-foreground) r g b / var(--opacity-subdued-text));
+    font-size: var(--font-paragraph-size);
+    color: var(--color-details, var(--color-foreground-muted));
     white-space: nowrap;
+    flex-wrap: wrap;
   }
+
   .blog-post-details > span {
     text-overflow: clip;
     overflow: hidden;
@@ -114,6 +126,16 @@
       "visible_if": "{{ block.settings.show_alignment != false }}"
     },
     {
+      "type": "header",
+      "content": "t:content.appearance"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "t:settings.text_color",
+      "placeholder": "t:settings.default"
+    },
+    {
       "type": "checkbox",
       "id": "show_alignment",
       "label": "t:settings.show_alignment",
@@ -143,11 +165,41 @@
       "step": 1,
       "unit": "px",
       "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding-inline-start",
+      "label": "t:settings.left",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding-inline-end",
+      "label": "t:settings.right",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
     }
   ],
   "presets": [
     {
-      "name": "t:names.details"
+      "name": "t:names.details",
+      "category": "t:categories.blog_post",
+      "settings": {
+        "show_date": true,
+        "show_author": false,
+        "type_preset": "",
+        "alignment": "center",
+        "show_alignment": true,
+        "padding-block-start": 0,
+        "padding-block-end": 0
+      }
     }
   ]
 }

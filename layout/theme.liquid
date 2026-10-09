@@ -1,67 +1,357 @@
 <!doctype html>
-<html
-  class="no-js{% if request.design_mode %} shopify-design-mode{% endif %}"
-  lang="{{ request.locale.iso_code }}"
->
-  <head>
-    {{ 'base.css' | asset_url | stylesheet_tag }}
+<html {% if request.design_mode %} class="shopify-design-mode" {% endif %} lang="{{ request.locale.iso_code }}">
 
-    {%- if settings.favicon != blank -%}
-      <link
-        rel="icon"
-        type="image/png"
-        href="{{ settings.favicon | image_url: width: 32, height: 32 }}"
-      >
-    {%- endif -%}
+<head>
+  {%- if settings.favicon != blank -%}
+  <link rel="icon" type="image/png" href="{{ settings.favicon | image_url: width: 32, height: 32 }}">
+  {%- endif -%}
 
-    {% comment %} This a way to wait for main content to load when navigating to a new page so that the view transitions can work consistently {% endcomment %}
-    <link
-      rel="expect"
-      href="#MainContent"
-      blocking="render"
-      id="view-transition-render-blocker"
-    >
+  {%- render 'view-transition-opt-in' -%}
 
-    {%- render 'meta-tags' -%}
-    {%- render 'fonts' -%}
-    {%- render 'scripts' -%}
-    {%- render 'theme-styles-variables' -%}
-    {%- render 'color-schemes' -%}
+  {%- render 'meta-tags' -%}
+  {%- render 'stylesheets' -%}
+  {%- render 'card-hover-effect-styles' -%}
+  {%- render 'fonts' -%}
+  {%- render 'scripts' -%}
+  {%- render 'theme-styles-variables' -%}
+  {%- render 'color-palette' -%}
 
-    {% if request.design_mode %}
-      {%- render 'theme-editor' -%}
-    {% endif %}
+  {% if request.design_mode %}
+  {%- render 'theme-editor' -%}
+  {% endif %}
 
-    {{ content_for_header }}
-  </head>
+  {{ content_for_header }}
+</head>
 
-  <body class="page-width-{{ settings.page_width }} card-hover-effect-{{ settings.card_hover_effect }}">
-    {% render 'skip-to-content-link', href: '#MainContent', text: 'accessibility.skip_to_text' %}
+<body class="page-width-{{ settings.page_width }} card-hover-effect-{{ settings.card_hover_effect }}">
+  {% render 'skip-to-content-link', href: '#MainContent', text: 'accessibility.skip_to_text' %}
+
+
+  {% render 'chat-drawer' %}
+
+  <div class="page-wrapper">
     <div id="header-group">
       {% sections 'header-group' %}
     </div>
 
-    <main
-      id="MainContent"
-      class="content-for-layout"
-      role="main"
+    <script>
+      /**
+       * Sets `--header-height` and `--header-group-height` to measured values before first paint.
+       *
+       * A few CSS rules position content relative to the header at first paint — a hero sized to
+       * the remaining viewport, a transparent header's negative margin. Without a measured value
+       * those rules use the `60px` fallback from `sections/header.liquid`, and the content visibly
+       * jumps once `header.js` corrects the values after load.
+       *
+       * Measuring forces layout mid-parse, so it only runs where a consuming rule exists.
+       * Callers opt in: the transparent-header branch below, or `snippets/measure-header-heights.liquid`,
+       * which any new first-paint consumer must render too.
+       *
+       * Measures once per page; after load, header.js's ResizeObservers keep the values fresh.
+       * The group-height walk mimics calculateHeaderGroupHeight() in utilities.js — keep them
+       * in sync.
+       */
+      window.measureHeaderHeights = (function () {
+        let measured = false;
+
+        return function measureHeaderHeights() {
+          if (measured) return;
+
+          const header = document.querySelector('#header-component');
+          const headerGroup = document.querySelector('#header-group');
+
+          if (!header || !headerGroup) return;
+          measured = true;
+
+          const headerHeight = header.offsetHeight;
+
+          let headerGroupHeight = 0;
+          for (const element of headerGroup.children) {
+            if (element instanceof HTMLElement) headerGroupHeight += element.offsetHeight;
+          }
+
+          /**
+           * A transparent header is absolutely positioned, so the loop above counts its section
+           * wrapper as 0px. When a section follows it in the group, header.liquid pushes that
+           * section down by the header's height using a margin, which offsetHeight also
+           * excludes — so the header's height has to be added back manually.
+           */
+          if (header.hasAttribute('transparent') && header.parentElement?.nextElementSibling) {
+            headerGroupHeight += headerHeight;
+          }
+
+          document.body.style.setProperty('--header-height', `${headerHeight}px`);
+          document.body.style.setProperty('--header-group-height', `${headerGroupHeight}px`);
+        };
+      })();
+
+      /**
+       * Transparent-header rules consume the measured heights at first paint on every
+       * template, so the transparent case opts in globally here instead of per-section.
+       */
+      if (document.querySelector('#header-component')?.hasAttribute('transparent')) {
+        measureHeaderHeights();
+      }
+
+      /**
+       * Sets `--top-row-height`, consumed by the header underlays and submenus. Deferred to a
+       * rAF so the height read doesn't force layout mid-parse, and scoped to the
+       * header, where all consumers live, so the write only invalidates the header subtree.
+       * Mimics the `--top-row-height` write in updateHeaderHeights() in utilities.js
+       */
+      (function setTopRowHeight() {
+        const header = document.querySelector('#header-component');
+        const headerTopRow = header?.querySelector('.header__row--top');
+        if (!headerTopRow) return;
+
+        window.requestAnimationFrame(function () {
+          header.style.setProperty('--top-row-height', `${headerTopRow.getBoundingClientRect().height}px`);
+        });
+      })();
+
+      /**
+       * Sets `--transparent-header-offset-boolean` when the first section must offset itself
+       * under a transparent header. The non-offset case relies on the `0` default declared in
+       * sections/header.liquid — unlike updateTransparentHeaderOffset() in utilities.js, which
+       * re-runs on editor changes and must write '0' to reset a previously written '1'.
+       */
+      (function updateTransparentHeaderOffset() {
+        const header = document.querySelector('#header-component');
+        const headerSection = document.querySelector('#header-group .header-section');
+        if (!headerSection || !header?.hasAttribute('transparent')) return;
+
+        const hasImmediateSection = headerSection.nextElementSibling?.classList.contains('shopify-section');
+        if (!hasImmediateSection) {
+          document.body.style.setProperty('--transparent-header-offset-boolean', '1');
+        }
+      })();
+
+      /**
+       * Sets the initial menu style (inline menu vs. drawer) on the header component.
+       * Mimics setHeaderMenuStyle() in utilities.js
+       */
+      (function setHeaderMenuStyle() {
+        const headerComponent = document.querySelector('#header-component');
+        if (headerComponent) {
+          const isTouchDevice = 'ontouchstart' in window && navigator.maxTouchPoints > 0;
+          const overflowList = headerComponent.querySelector('overflow-list');
+          const hasReachedMinimum = overflowList && overflowList.hasAttribute('minimum-reached');
+          headerComponent.dataset.menuStyle = isTouchDevice || hasReachedMinimum ? 'drawer' : 'menu';
+        }
+      })();
+
+      function throttle(func, wait) {
+        let timeout = null;
+        console.log("First timeout", timeout);
+
+        return function () {
+          console.log("timeout", timeout);
+          if (!timeout) {
+            timeout = setTimeout(() => {
+              func();
+              timeout = null;
+            }, wait);
+            //console.log("timeout set", timeout);
+          }
+        };
+      }
+
+      function demoTest() {
+        console.log('demoTest called');
+      }
+
+      const throttledDemoTest = throttle(demoTest, 1000);
+
+      document.addEventListener('scroll', () => {
+        throttledDemoTest();
+      });
+    </script>
+    <main id="MainContent" class="content-for-layout" role="main"
       data-page-transition-enabled="{{ settings.page_transition_enabled }}"
-      data-product-transition="{{ settings.transition_to_main_product }}"
-      data-template="{{ template }}"
-    >
+      data-product-transition="{{ settings.transition_to_main_product }}" data-template="{{ template }}">
       {{ content_for_layout }}
     </main>
+    <div id="view-transition-overlay" class="view-transition-overlay">
+      <input type="text" name="search_box" id="search_box" class="search-box"
+        placeholder="{{ 'layout search placeholder' }}" />
+      <div class="search-results" id="search_results"></div>
+    </div>
+    <ul class="event_delegation">
+      <li>Closure: A closure is a function that has access to its own scope, the outer function's scope, and the global
+        scope. It allows a function to remember and access variables from its outer scope even after the outer function
+        has finished executing.</li>
+      <li>Callback: A callback is a function that is passed as an argument to another function and is executed after
+        some operation has been completed. It allows for asynchronous programming and handling of events.</li>
+      <li>Higher Order Function: A higher-order function is a function that takes one or more functions as arguments or
+        returns a function as its result. It allows for more abstract and flexible programming patterns.</li>
+    </ul>
+    <footer>
+      {% sections 'footer-group' %}
+    </footer>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
 
-    {% sections 'footer-group' %}
+      const searchBox = document.getElementById('search_box');
+      const searchResults = document.getElementById('search_results');
 
-    {% render 'search-modal' %}
+      let timer;
 
-    {% # theme-check-disable ParserBlockingScript %}
-    <script src="{{ 'critical.js' | asset_url }}"></script>
-    {% # theme-check-enable ParserBlockingScript %}
+      searchBox.addEventListener('input', function () {
+        const query = searchBox.value.trim();
 
-    {% if settings.quick_add or settings.mobile_quick_add %}
-      {% render 'quick-add-modal' %}
-    {% endif %}
-  </body>
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+          if (query.length > 0) {
+            searchResult(query);
+          }
+        }, 1000)
+
+        function searchResult(query) {
+          fetch(`/search/suggest.json?q=${encodeURIComponent(query)}&resources[type]=product`)
+            .then(response => response.json())
+            .then(data => {
+              const products = data.resources.results.products;
+              searchResults.innerHTML = products.map(product => `
+                  <div class="search-result-item">
+                    <a href="${product.url}">
+                      <img src="${product.image}" alt="${product.title}" />
+                      <span>${product.title}</span>
+                    </a>
+                  </div>
+                `).join('');
+            })
+            .catch(error => {
+              console.error('Error fetching search results:', error);
+              searchResults.innerHTML = '<p>Error fetching results</p>';
+            });
+        }
+      });
+
+      // closure example
+      function outer() {
+        let count = 0;
+
+        function inner() {
+          count++;
+          //console.log("Inner count:", count);
+        }
+
+        //console.log("Outer count:", count);
+
+        return inner;
+      }
+
+      const counter = outer();
+
+      counter(); // 1
+      counter(); // 2
+      counter(); // 3
+      counter(); // 3
+
+      // callback example
+      function secondfunction(name, callback) {
+        //console.log("Welcome, " + name + "!");
+        callback(name);
+      }
+
+      function onefunction(name) {
+        // console.log("Goodbye, " + name + "!");
+      }
+      secondfunction("Rahul", onefunction);
+
+      // higher order function example
+      function higherOrderFunction(fn) {
+        //console.log("Inside higher order function");
+        fn();
+      };
+
+      function sayHello() {
+        //console.log("Hello from the callback function!");
+      }
+
+      higherOrderFunction(sayHello);
+
+
+      // event delegation example
+      const eventDelegationList = document.querySelector('.event_delegation');
+
+      eventDelegationList.addEventListener('click', function (event) {
+        if (event.target.tagName === 'LI') {
+          //console.log('You clicked on: ' + event.target.textContent);
+        }
+      });
+
+
+
+      //Memoization 
+      // without memoization, the add function will be called every time with the same arguments, which can be inefficient if the function is expensive to compute.
+      function add(a, b) {
+        console.log('Calculating result for args:', a, b);
+        return a + b;
+      }      
+
+      // With memoization, we can cache the results of expensive function calls and return the cached result when the same inputs occur again. This can significantly improve performance for functions that are called frequently with the same arguments.
+      function memoizeSquare() {
+        const cache = {};
+
+        return function (n) {
+          if (n in cache) {
+            console.log("From cache");
+            return cache[n];
+          }
+
+          console.log("Calculating...");
+          cache[n] = n * n;
+
+          return cache[n];
+        };
+      }
+
+      const square = memoizeSquare();
+
+      console.log(square(5)); // Calculating... 25
+      console.log(square(5)); // From cache: 25
+      console.log(square(5)); // From cache: 25
+
+
+      function addmemoize() {
+        const cache = {};
+
+        return function (a, b) {
+          const key = `${a}-${b}`;
+          console.log("key", key);
+          if (key in cache) {
+            console.log("From cache");
+            return cache[key];
+          }
+
+          console.log('Calculating result for args:', a, b);
+          cache[key] = a + b;
+
+          return cache[key];
+        };
+      }
+
+      const upadd = addmemoize();
+
+      console.log(upadd(2, 3)); // Calculating result for args: 2 3 => 5
+      console.log(upadd(2, 3)); // From cache => 5    
+      console.log(upadd(2, 3)); // From cache => 5    
+
+
+
+
+    });
+  </script>
+  {% render 'cart-drawer', render_wrapper: true %}
+  {% render 'theme-drawer' %}
+
+  {% render 'search-modal' %}
+
+  {% if settings.quick_add or settings.mobile_quick_add %}
+  {% render 'quick-add-modal' %}
+  {% endif %}
+</body>
+
 </html>

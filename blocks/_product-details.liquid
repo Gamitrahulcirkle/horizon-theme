@@ -1,13 +1,18 @@
 
 
+{%- assign block_settings = block.settings -%}
+{%- if block_settings.height == 'fill' -%}
+  {% # `.full-height--desktop` consumes `--header-group-height` at first paint (stylesheet below) %}
+  {% render 'measure-header-heights', only_on_desktop: true %}
+{%- endif -%}
 <div
   id="ProductInformation-{{ section.id }}"
   class="
     product-details
-    {% if block.settings.sticky_details_desktop %} sticky-content--desktop{% endif %}
-    {% if block.settings.height == 'fill' -%} full-height--desktop{% endif -%}
+    {% if block_settings.sticky_details_desktop %} sticky-content--desktop{% endif %}
+    {% if block_settings.height == 'fill' -%} full-height--desktop{% endif -%}
   "
-  style="--details-position: {{ block.settings.details_position }};"
+  style="--details-position: {{ block_settings.details_position }};"
   data-testid="product-information-details"
   {% if settings.transition_to_main_product %}
     data-view-transition-type="product-details"
@@ -16,21 +21,26 @@
   {% capture children %}
     <div class="view-product-title">
       <a
-        href="{{ product.selected_or_first_available_variant.url }}"
-        class="link"
+        href="{{ closest.product.selected_or_first_available_variant.url }}"
       >
-        {{- product.title }}
+        {{- closest.product.title }}
       </a>
     </div>
     {% content_for 'blocks' %}
   {% endcapture %}
 
-  {% render 'group', children: children, settings: block.settings, shopify_attributes: block.shopify_attributes %}
+  {% render 'group',
+    children: children,
+    settings: block_settings,
+    shopify_attributes: block.shopify_attributes,
+    background_color: block_settings.background_color,
+    block_id: block.id
+  %}
 </div>
 
 {% stylesheet %}
   /* Clear padding on mobile, if not full-width */
-  @media screen and (width < 750px) {
+  @media screen and (max-width: 749px) {
     .product-information.section--page-width .product-details > .group-block {
       padding-inline: 0;
     }
@@ -47,7 +57,7 @@
     justify-content: center;
   }
 
-  @media screen and (width >= 750px) {
+  @media screen and (min-width: 750px) {
     .product-details > .group-block {
       height: min-content;
     }
@@ -124,6 +134,9 @@
     },
     {
       "type": "product-inventory"
+    },
+    {
+      "type": "product-custom-property"
     }
   ],
   "tag": null,
@@ -256,19 +269,6 @@
       "content": "t:content.appearance"
     },
     {
-      "type": "checkbox",
-      "id": "inherit_color_scheme",
-      "label": "t:settings.inherit_color_scheme",
-      "default": true
-    },
-    {
-      "type": "color_scheme",
-      "id": "color_scheme",
-      "label": "t:settings.color_scheme",
-      "default": "scheme-1",
-      "visible_if": "{{ block.settings.inherit_color_scheme == false }}"
-    },
-    {
       "type": "select",
       "id": "background_media",
       "label": "t:settings.background_media",
@@ -287,6 +287,13 @@
         }
       ],
       "default": "none"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "t:settings.background_color",
+      "placeholder": "t:settings.default",
+      "visible_if": "{{ block.settings.background_media == 'none' }}"
     },
     {
       "type": "video",
@@ -335,9 +342,13 @@
       "visible_if": "{{ block.settings.background_media == 'image' }}"
     },
     {
+      "type": "header",
+      "content": "t:content.borders"
+    },
+    {
       "type": "select",
       "id": "border",
-      "label": "t:settings.borders",
+      "label": "t:settings.style",
       "options": [
         {
           "value": "none",
@@ -354,10 +365,10 @@
       "type": "range",
       "id": "border_width",
       "min": 0,
-      "max": 10,
-      "step": 0.5,
+      "max": 100,
+      "step": 1,
       "unit": "px",
-      "label": "t:settings.border_width",
+      "label": "t:settings.thickness",
       "default": 1,
       "visible_if": "{{ block.settings.border != 'none' }}"
     },
@@ -368,8 +379,15 @@
       "max": 100,
       "step": 1,
       "unit": "%",
-      "label": "t:settings.border_opacity",
+      "label": "t:settings.opacity",
       "default": 100,
+      "visible_if": "{{ block.settings.border != 'none' }}"
+    },
+    {
+      "type": "color",
+      "id": "border_color",
+      "label": "t:settings.color",
+      "placeholder": "t:settings.default",
       "visible_if": "{{ block.settings.border != 'none' }}"
     },
     {
@@ -438,8 +456,6 @@
         "padding-inline-start": 0,
         "padding-inline-end": 0,
         "gap": 12,
-        "inherit_color_scheme": true,
-        "color_scheme": "",
         "video_position": "cover",
         "background_image_position": "cover",
         "border": "none",
@@ -450,7 +466,7 @@
         "text_TMtYp8": {
           "type": "text",
           "settings": {
-            "text": "<p>Home → Shirts</p>",
+            "text": "t:html_defaults.home_to_shirts",
             "alignment": "left",
             "padding-block-start": 16,
             "padding-inline-end": 0,
@@ -469,14 +485,13 @@
         "text_GMQR8L": {
           "type": "text",
           "settings": {
-            "text": "<p>★★★★★ 368 Reviews</p>",
+            "text": "t:html_defaults.reviews",
             "alignment": "left"
           }
         },
         "price_a7krng": {
           "type": "price",
           "settings": {
-            "product": "{{ closest.product }}",
             "show_tax_info": true,
             "type_preset": "h4",
             "alignment": "left"
@@ -485,7 +500,6 @@
         "variant_picker_R3rGDr": {
           "type": "variant-picker",
           "settings": {
-            "product": "{{ closest.product }}",
             "variant_style": "pills",
             "padding-block-start": 0,
             "padding-block-end": 8,
@@ -496,7 +510,6 @@
         "buy_buttons_eYQEYi": {
           "type": "buy-buttons",
           "settings": {
-            "product": "{{ closest.product }}",
             "padding-block-start": 0,
             "padding-block-end": 0,
             "padding-inline-start": 0,
@@ -507,16 +520,12 @@
               "type": "add-to-cart",
               "static": true,
               "settings": {
-                "product": "{{ closest.product }}",
                 "style_class": "button-secondary"
               }
             },
             "accelerated-checkout": {
               "type": "accelerated-checkout",
-              "static": true,
-              "settings": {
-                "product": "{{ closest.product }}"
-              }
+              "static": true
             }
           },
           "block_order": []
@@ -536,8 +545,6 @@
             "horizontal_alignment_flex_direction_column": "flex-start",
             "vertical_alignment_flex_direction_column": "center",
             "gap": 8,
-            "inherit_color_scheme": true,
-            "color_scheme": "",
             "video_position": "cover",
             "background_image_position": "cover",
             "border": "none",
@@ -560,8 +567,6 @@
                 "horizontal_alignment_flex_direction_column": "flex-start",
                 "vertical_alignment_flex_direction_column": "center",
                 "gap": 12,
-                "inherit_color_scheme": true,
-                "color_scheme": "",
                 "video_position": "cover",
                 "background_image_position": "cover",
                 "border": "none",
@@ -579,7 +584,7 @@
                 "text_83R7CQ": {
                   "type": "text",
                   "settings": {
-                    "text": "<p>Free shipping over $50</p>",
+                    "text": "t:html_defaults.free_shipping_over",
                     "alignment": "left",
                     "padding-block-start": 0,
                     "padding-block-end": 0,
@@ -605,8 +610,6 @@
                 "horizontal_alignment_flex_direction_column": "flex-start",
                 "vertical_alignment_flex_direction_column": "center",
                 "gap": 12,
-                "inherit_color_scheme": true,
-                "color_scheme": "",
                 "video_position": "cover",
                 "background_image_position": "cover",
                 "border": "none",
@@ -624,7 +627,7 @@
                 "text_EmGGUV": {
                   "type": "text",
                   "settings": {
-                    "text": "<p>Free 30-day returns</p>",
+                    "text": "t:html_defaults.free_returns",
                     "alignment": "left",
                     "padding-block-start": 0,
                     "padding-block-end": 0,
@@ -645,7 +648,7 @@
             "accordion-row-1": {
               "type": "_accordion-row",
               "settings": {
-                "heading": "Materials"
+                "heading": "t:text_defaults.materials"
               },
               "blocks": {
                 "text": {
@@ -657,7 +660,7 @@
             "accordion-row-2": {
               "type": "_accordion-row",
               "settings": {
-                "heading": "Care instructions"
+                "heading": "t:text_defaults.care_instructions"
               },
               "blocks": {
                 "text": {
@@ -669,7 +672,7 @@
             "accordion-row-3": {
               "type": "_accordion-row",
               "settings": {
-                "heading": "Fit"
+                "heading": "t:text_defaults.fit"
               },
               "blocks": {
                 "text": {
@@ -684,14 +687,13 @@
         "complementary_products": {
           "type": "product-recommendations",
           "settings": {
-            "product": "{{ closest.product }}",
             "recommendation_type": "complementary"
           },
           "blocks": {
             "recommendations-header": {
               "type": "text",
               "settings": {
-                "text": "<h3>Styled with</h3>",
+                "text": "t:html_defaults.styled_with",
                 "type_preset": "h5"
               }
             }

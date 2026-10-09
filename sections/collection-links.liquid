@@ -19,17 +19,22 @@
 <script
   src="{{ 'collection-links.js' | asset_url }}"
   type="module"
+  fetchpriority="low"
 ></script>
 
-<div class="section-background color-{{ section.settings.color_scheme }}"></div>
+{% liquid
+  if section.settings.background_color != blank
+    render 'contrast-override', background_color: section.settings.background_color, section_id: section.id
+  endif
+%}
+
 <div
-  class="
-    section section--{{ section.settings.section_width }} color-{{ section.settings.color_scheme }} spacing-style
-    {% if section.settings.collection_list == blank and request.design_mode == false %}
-      in-onboarding-state
-    {% endif %}
-  "
+  class="section-background{% if section.settings.background_color != blank %} color-custom-{{ section.id }}{% endif %}"
+></div>
+<div
+  class="section section--{{ section.settings.section_width }}{% if section.settings.background_color != blank %} color-custom-{{ section.id }}{% endif %} spacing-style"
   style="{% render 'spacing-style', settings: section.settings %}"
+  data-testid="collection-links-{{ section.id }}"
 >
   <collection-links-component
     layout="{{ section.settings.layout }}"
@@ -44,10 +49,10 @@
     >
       {% for collection in collection_list limit: limit %}
         {% liquid
-          assign selected = false
+          assign current = false
 
           if collection.id == active_collection.id
-            assign selected = true
+            assign current = true
           endif
         %}
         {% content_for 'block',
@@ -55,7 +60,7 @@
           id: 'link',
           closest.collection: collection,
           index: forloop.index0,
-          selected: selected
+          current: current
         %}
       {% endfor %}
     </div>
@@ -65,27 +70,25 @@
         {% capture slides %}
           {% for collection in collection_list limit: limit %}
           {% liquid
-            assign selected = false
+            assign current = false
 
             if collection.id == active_collection.id
-              assign selected = true
+              assign current = true
             endif
           %}
 
           {% capture slide %}
-            {% # theme-check-disable UniqueStaticBlockId %}
             {% content_for 'block',
               type: '_collection-link',
               id: 'link',
               closest.collection: collection,
               index: forloop.index0,
-              selected: selected,
+              current: current,
               image_only: true
             %}
-            {% # theme-check-enable UniqueStaticBlockId %}
           {% endcapture %}
 
-          {% render 'slideshow-slide', children: slide, index: forloop.index0, selected: selected %}
+          {% render 'slideshow-slide', children: slide, index: forloop.index0 %}
         {% endfor %}
       {% endcapture %}
 
@@ -99,7 +102,6 @@
   </collection-links-component>
 </div>
 
-{% # theme-check-disable ValidBlockTarget %}
 {% stylesheet %}
   collection-links-component {
     --alignment: flex-start;
@@ -141,16 +143,18 @@
       grid-template-columns: 1fr var(--template-column-ratio);
       grid-template-areas: 'text image';
 
-      &[reverse] {
-        grid-template-areas: 'image text';
-        grid-template-columns: var(--template-column-ratio) 1fr;
+      @media screen and (min-width: 750px) {
+        &[reverse] {
+          grid-template-areas: 'image text';
+          grid-template-columns: var(--template-column-ratio) 1fr;
+        }
       }
 
       .collection-links__container {
         align-items: var(--alignment);
       }
 
-      @media (width < 750px) {
+      @media screen and (max-width: 749px) {
         grid-template-columns: 1fr;
         grid-template-areas: 'text' 'image';
         grid-gap: var(--gap-2xl);
@@ -185,7 +189,7 @@
     overflow: hidden;
     grid-area: image;
 
-    @media (width < 750px) {
+    @media screen and (max-width: 749px) {
       image-block {
         max-width: 100%;
       }
@@ -279,10 +283,10 @@
       "visible_if": "{{ section.settings.layout == \"spotlight\" }}"
     },
     {
-      "type": "color_scheme",
-      "id": "color_scheme",
-      "label": "t:settings.color_scheme",
-      "default": "scheme-1"
+      "type": "color",
+      "id": "background_color",
+      "label": "t:settings.background_color",
+      "placeholder": "t:settings.default"
     },
     {
       "type": "header",
@@ -317,16 +321,12 @@
         "link": {
           "type": "_collection-link",
           "static": true,
-          "settings": {
-            "collection": "{{ closest.collection }}"
-          },
           "blocks": {
             "title": {
               "type": "_inline-collection-title",
               "name": "t:names.title",
               "static": true,
               "settings": {
-                "collection": "{{ closest.collection }}",
                 "font": "var(--font-subheading--family)"
               }
             },
@@ -334,7 +334,6 @@
               "type": "_image",
               "static": true,
               "settings": {
-                "image": "{{ closest.collection.image }}",
                 "height": "large",
                 "ratio": "square"
               }
@@ -354,16 +353,12 @@
         "link": {
           "type": "_collection-link",
           "static": true,
-          "settings": {
-            "collection": "{{ closest.collection }}"
-          },
           "blocks": {
             "title": {
               "type": "_inline-collection-title",
               "name": "t:names.title",
               "static": true,
               "settings": {
-                "collection": "{{ closest.collection }}",
                 "font": "var(--font-subheading--family)"
               }
             },
@@ -371,7 +366,6 @@
               "type": "_image",
               "static": true,
               "settings": {
-                "image": "{{ closest.collection.image }}",
                 "height": "medium"
               }
             }
@@ -382,4 +376,3 @@
   ]
 }
 {% endschema %}
-{% # theme-check-enable ValidBlockTarget %}

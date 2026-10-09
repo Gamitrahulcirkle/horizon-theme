@@ -12,9 +12,17 @@
   endif
 %}
 
-<div class="section-background color-{{ section.settings.color_scheme }}"></div>
+{% liquid
+  if section.settings.background_color != blank
+    render 'contrast-override', background_color: section.settings.background_color, section_id: section.id
+  endif
+%}
+
 <div
-  class="section section--{{ section.settings.section_width }} disable-section-top-offset media-with-content color-{{ section.settings.color_scheme }} spacing-style {{ media_class_modifier }}"
+  class="section-background{% if section.settings.background_color != blank %} color-custom-{{ section.id }}{% endif %}"
+></div>
+<div
+  class="section section--{{ section.settings.section_width }} disable-section-top-offset media-with-content{% if section.settings.background_color != blank %} color-custom-{{ section.id }}{% endif %} spacing-style {{ media_class_modifier }}"
   data-testid="media-with-content"
   style="
     {%- render 'spacing-style', settings: section.settings %}
@@ -50,33 +58,36 @@
   .section--page-width {
     &.media-with-content {
       grid-template-areas: 'margin-left media margin-right' 'margin-left content margin-right';
-      @media screen and (width >= 750px) {
-        grid-template-areas: 'margin-left media content margin-right';
+
+      @media screen and (min-width: 750px) {
         /* Wide proportion is media 3.5 parts, content 2.5 parts. Which equals 7|5. So divide the central column by 7+5 and multiply accordingly */
         --media-with-content-grid-columns: var(--full-page-grid-margin)
           calc((var(--full-page-grid-central-column-width) / 12) * 7)
           calc((var(--full-page-grid-central-column-width) / 12) * 5) var(--full-page-grid-margin);
+
+        grid-template-areas: 'margin-left media content margin-right';
       }
     }
 
     &.media-with-content--media-right {
-      @media screen and (width >= 750px) {
+      @media screen and (min-width: 750px) {
         --media-with-content-grid-columns: var(--full-page-grid-margin)
           calc((var(--full-page-grid-central-column-width) / 12) * 5)
           calc((var(--full-page-grid-central-column-width) / 12) * 7) var(--full-page-grid-margin);
+
         grid-template-areas: 'margin-left content media margin-right';
       }
     }
 
     &.media-with-content--medium {
-      @media screen and (width >= 750px) {
+      @media screen and (min-width: 750px) {
         --media-with-content-grid-columns: var(--full-page-grid-margin)
           repeat(2, calc(var(--full-page-grid-central-column-width) / 2)) var(--full-page-grid-margin);
       }
     }
 
     &.media-with-content--narrow.media-with-content--media-right {
-      @media screen and (width >= 750px) {
+      @media screen and (min-width: 750px) {
         --media-with-content-grid-columns: var(--full-page-grid-margin)
           calc((var(--full-page-grid-central-column-width) / 3) * 2)
           calc(var(--full-page-grid-central-column-width) / 3) var(--full-page-grid-margin);
@@ -84,7 +95,7 @@
     }
 
     &.media-with-content--narrow {
-      @media screen and (width >= 750px) {
+      @media screen and (min-width: 750px) {
         --media-with-content-grid-columns: var(--full-page-grid-margin)
           calc(var(--full-page-grid-central-column-width) / 3)
           calc((var(--full-page-grid-central-column-width) / 3) * 2) var(--full-page-grid-margin);
@@ -94,26 +105,27 @@
 
   .section--full-width {
     &.media-with-content--media-right {
-      @media screen and (width >= 750px) {
+      @media screen and (min-width: 750px) {
         --media-with-content-grid-columns: 2.5fr 3.5fr;
+
         grid-template-areas: 'content media';
       }
     }
 
     &.media-with-content--medium {
-      @media screen and (width >= 750px) {
+      @media screen and (min-width: 750px) {
         --media-with-content-grid-columns: 1fr 1fr;
       }
     }
 
     &.media-with-content--narrow {
-      @media screen and (width >= 750px) {
+      @media screen and (min-width: 750px) {
         --media-with-content-grid-columns: 2fr 4fr;
       }
     }
 
     &.media-with-content--narrow.media-with-content--media-right {
-      @media screen and (width >= 750px) {
+      @media screen and (min-width: 750px) {
         --media-with-content-grid-columns: 4fr 2fr;
       }
     }
@@ -124,19 +136,19 @@
     grid-template-columns: var(--media-with-content-grid-columns);
     grid-template-areas: 'media media media' 'margin-left content margin-right';
 
-    @media screen and (width >= 750px) {
+    @media screen and (min-width: 750px) {
       grid-template-areas: 'media media content margin-right';
     }
   }
 
   .media-with-content--media-extend.media-with-content--media-right {
-    @media screen and (width >= 750px) {
+    @media screen and (min-width: 750px) {
       grid-template-areas: 'margin-left content media media';
     }
   }
 
   .media-with-content--media-right {
-    @media screen and (width >= 750px) {
+    @media screen and (min-width: 750px) {
       grid-template-areas: 'margin-left content media media';
     }
   }
@@ -147,10 +159,11 @@
     grid-template-columns: var(--media-with-content-grid-columns);
     grid-template-areas: 'media media media' 'content content content';
 
-    @media screen and (width >= 750px) {
+    @media screen and (min-width: 750px) {
+      --media-with-content-grid-columns: 3.5fr 2.5fr;
+
       /* Default desktop layout is wide media, on the left, in full page section */
       grid-template-areas: 'media content';
-      --media-with-content-grid-columns: 3.5fr 2.5fr;
     }
 
     .media-block {
@@ -166,7 +179,7 @@
       padding-inline: var(--page-margin);
       padding-block: calc(2 * var(--page-margin));
 
-      @media screen and (width >= 750px) {
+      @media screen and (min-width: 750px) {
         padding-block: var(--page-margin);
       }
     }
@@ -174,7 +187,7 @@
     &.section--page-width .media-with-content__content > .group-block-content {
       padding-inline: 0;
 
-      @media screen and (width >= 750px) {
+      @media screen and (min-width: 750px) {
         padding-inline-start: var(--page-margin);
       }
     }
@@ -187,6 +200,7 @@
 
   .media-with-content[data-shopify-visual-preview] {
     --hero-min-height: 500px;
+
     min-height: 500px;
   }
 {% endstylesheet %}
@@ -286,10 +300,10 @@
       "visible_if": "{{ section.settings.section_width == 'page-width' }}"
     },
     {
-      "type": "color_scheme",
-      "id": "color_scheme",
-      "label": "t:settings.color_scheme",
-      "default": "scheme-3"
+      "type": "color",
+      "id": "background_color",
+      "label": "t:settings.background_color",
+      "placeholder": "t:settings.default"
     },
     {
       "type": "header",
@@ -322,8 +336,7 @@
       "category": "t:categories.storytelling",
       "settings": {
         "media_width": "medium",
-        "media_height": "60svh",
-        "color_scheme": "scheme-4"
+        "media_height": "60svh"
       },
       "blocks": {
         "media": {
@@ -342,7 +355,7 @@
               "type": "text",
               "name": "t:names.caption",
               "settings": {
-                "text": "<p>Bestseller</p>",
+                "text": "t:html_defaults.bestseller",
                 "type_preset": "h6"
               }
             },
@@ -356,14 +369,14 @@
                   "type": "text",
                   "name": "t:names.heading",
                   "settings": {
-                    "text": "<h2>Our signature product</h2>",
+                    "text": "t:html_defaults.signature_products",
                     "type_preset": "h3"
                   }
                 },
                 "text": {
                   "type": "text",
                   "settings": {
-                    "text": "<p>Made with care and unconditionally loved by our customers, this signature bestseller exceeds all expectations.</p>",
+                    "text": "t:html_defaults.made_with_care_extended",
                     "max_width": "narrow",
                     "type_preset": "rte"
                   }
@@ -374,9 +387,9 @@
             "button": {
               "type": "button",
               "settings": {
-                "label": "Shop now",
+                "label": "t:text_defaults.shop_now_button_label",
                 "link": "shopify://collections/all",
-                "style_class": "link"
+                "style_class": "button-unstyled"
               }
             }
           },
@@ -390,8 +403,7 @@
       "settings": {
         "media_position": "right",
         "media_width": "medium",
-        "media_height": "60svh",
-        "color_scheme": "scheme-3"
+        "media_height": "60svh"
       },
       "blocks": {
         "media": {
@@ -410,7 +422,7 @@
               "type": "jumbo-text",
               "name": "t:names.jumbo_text",
               "settings": {
-                "text": "Up\nThe\nAnte",
+                "text": "t:text_defaults.up_the_ante",
                 "font": "heading",
                 "alignment": "right",
                 "line_height": "0.8",

@@ -1,51 +1,63 @@
 
 
-{% capture title %}
-  {% content_for 'block', id: 'heading', type: '_heading', text: article.title %}
-{% endcapture %}
+{%- doc -%}
+  Renders a blog post card.
 
-{% capture details %}
-  {% content_for 'block',
-    id: 'blog-post-details',
-    type: '_blog-post-info-text',
-    alignment: block.settings.alignment,
-    article: article
-  %}
-{% endcapture %}
+  @param {object} article - The article object
+  @param {boolean} is_horizontal - Whether the card is horizontal or not
+  @param {string} [image_sizes] - The responsive sizes value for this card's image
+  @param {string} [image_loading] - The loading strategy for this card's image
+  @param {string} [image_fetch_priority] - The fetch priority for this card's image
+{%- enddoc -%}
+
+{%- assign block_settings = block.settings -%}
+
+{% liquid
+  if block_settings.background_color != blank
+    render 'contrast-override', background_color: block_settings.background_color, section_id: block.id
+  endif
+%}
+
+{% if block_settings.background_color != blank %}
+  {% style %}
+    blog-posts-list[section-id="{{ section.id }}"] .blog-post-item {
+      --color-background: {{ block_settings.background_color }};
+    }
+  {% endstyle %}
+{% endif %}
 
 <div
-  class="blog-post-card"
-  style="--text-align: {{ block.settings.alignment }}"
+  class="blog-post-card{% if block_settings.background_color != blank %} color-custom-{{ block.id }}{% endif %}{% if is_horizontal %} blog-post-card--horizontal{% endif %}"
+  style="--text-align: {{ block_settings.alignment }}"
 >
-  {%- if article.image -%}
-    <div class="blog-post-card__image-container">
-      <a href="{{ article.url }}">
-        {% content_for 'block', id: 'image', type: '_blog-post-image', image: article.image %}
-      </a>
-    </div>
-  {%- endif -%}
+  {% if article.image %}
+    {% content_for 'block',
+      id: 'image',
+      type: '_blog-post-image',
+      article: article,
+      image_sizes: image_sizes,
+      image_loading: image_loading,
+      image_fetch_priority: image_fetch_priority
+    %}
+  {% endif %}
 
   <div class="blog-post-card__content">
-    <a href="{{ article.url }}">{{ title }}</a>
+    <a
+      class="blog-post-card__title-link"
+      href="{{ article.url }}"
+      data-testid="blog-post-link"
+    >
+      {%- content_for 'block', id: 'heading', type: '_heading', text: article.title -%}
+    </a>
 
-    {{ details }}
+    {% content_for 'block',
+      id: 'blog-post-details',
+      type: '_blog-post-info-text',
+      alignment: block_settings.alignment,
+      article: article
+    %}
 
-    <div class="blog-post-card__content-text">
-      {% assign content = article.excerpt | default: article.content %}
-
-      {% if content %}
-        {% assign truncatewords = 30 %}
-        {% unless article.image %}
-          {% assign truncatewords = 90 %}
-        {% endunless %}
-
-        <rte-formatter>
-          {{ content | strip_html | truncatewords: truncatewords }}
-        </rte-formatter>
-      {% endif %}
-
-      <a href="{{ article.url }}">{{ 'content.read_more' | t }}</a>
-    </div>
+    {% content_for 'block', id: 'content', type: '_blog-post-description', article: article, show_read_more: true %}
   </div>
 </div>
 
@@ -54,37 +66,7 @@
     display: flex;
     flex-direction: column;
     text-align: var(--text-align);
-  }
-
-  .blog-post-item .blog-post-card__image-container,
-  .blog-post-item .blog-post-card__content {
-    width: 100%;
-  }
-
-  .blog-post-item:first-child .blog-post-card {
-    flex-direction: row;
-
-    @media screen and (width < 750px) {
-      flex-direction: column;
-    }
-  }
-
-  .blog-post-item:first-child .blog-post-card__image-container {
-    width: 70%;
-
-    @media screen and (width < 750px) {
-      width: 100%;
-    }
-  }
-
-  .blog-post-item:first-child:has(.blog-post-card__image-container) .blog-post-card__content {
-    padding-inline-start: var(--columns-gap);
-    width: 30%;
-
-    @media screen and (width < 750px) {
-      padding-inline-start: 0;
-      width: 100%;
-    }
+    column-gap: var(--columns-gap);
   }
 
   .blog-post-card__content {
@@ -93,25 +75,57 @@
     flex-direction: column;
   }
 
-  .blog-post-card__content a,
-  .blog-post-card__content .blog-post-card__content-text {
+  .blog-post-card--horizontal .blog-post-card__title-link .spacing-style,
+  .blog-post-card--horizontal .blog-post-details,
+  .blog-post-card--horizontal .blog-post-card__content-text {
+    padding-inline-start: 0;
+  }
+
+  .blog-post-card__image-container,
+  .blog-post-card__content {
+    width: 100%;
+  }
+
+  /**
+   * Horizontal layout (image left, content right)
+   * Applied to hero posts based on total article count
+   * Only applies the split layout when an image is actually present
+   */
+  .blog-post-card--horizontal {
+    flex-direction: row;
+
+    @media screen and (max-width: 749px) {
+      flex-direction: column;
+    }
+  }
+
+  .blog-post-card--horizontal > .blog-post-card__image-container {
+    flex-basis: 70%;
+  }
+
+  .blog-post-card--horizontal .blog-post-card__content {
+    flex-basis: 30%;
+    flex-grow: 1;
+  }
+
+  .blog-post-card__content a {
     display: block;
     text-wrap: pretty;
     text-decoration: none;
     padding-block-start: 0.75rem;
+    color: var(--color-foreground);
   }
 
-  .blog-post-card__content a:hover,
-  .blog-post-card__content a:hover [style*='--color: var(--color-primary)'] {
-    color: var(--color-primary-hover);
+  .blog-post-card__content a:hover {
+    color: var(--color-foreground-subdued);
   }
 
-  .blog-post-card__content a:hover [style*='--color: var(--color-foreground-heading)'] {
-    color: rgba(from var(--color-foreground-heading) r g b / var(--opacity-subdued-text));
-  }
+  a.blog-post-card__title-link {
+    color: var(--color-foreground);
 
-  .blog-post-card__content a:hover [style*='--color: var(--color-foreground)'] {
-    color: rgba(from var(--color-foreground) r g b / var(--opacity-subdued-text));
+    &:hover {
+      color: var(--color-foreground-subdued);
+    }
   }
 {% endstylesheet %}
 
@@ -124,6 +138,12 @@
       "id": "alignment",
       "label": "t:settings.alignment",
       "default": "left"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "t:settings.background_color",
+      "placeholder": "t:settings.default"
     }
   ]
 }

@@ -8,14 +8,17 @@
   {% content_for 'blocks', closest.product: product %}
 {% endcapture %}
 
-{% render 'product-card', children: children, product: product %}
+{% render 'swatch-styles' %}
+{% render 'quantity-selector-styles' %}
+{% render 'product-card', children: children, product: product, block: block %}
+{% render 'buy-buttons-styles' %}
 
 {% schema %}
 {
   "name": "t:names.product_card",
   "blocks": [
     {
-      "type": "group"
+      "type": "_product-card-group"
     },
     {
       "type": "text"
@@ -24,13 +27,13 @@
       "type": "image"
     },
     {
-      "type": "buy-buttons"
-    },
-    {
       "type": "price"
     },
     {
       "type": "review"
+    },
+    {
+      "type": "sku"
     },
     {
       "type": "swatches"
@@ -40,6 +43,12 @@
     },
     {
       "type": "product-title"
+    },
+    {
+      "type": "custom-liquid"
+    },
+    {
+      "type": "@app"
     }
   ],
   "tag": null,
@@ -60,21 +69,80 @@
       "default": 16
     },
     {
-      "type": "checkbox",
-      "id": "inherit_color_scheme",
-      "label": "t:settings.inherit_color_scheme",
-      "default": true
+      "type": "header",
+      "content": "t:content.size"
     },
     {
-      "type": "color_scheme",
-      "id": "color_scheme",
-      "label": "t:settings.color_scheme",
-      "default": "scheme-1",
-      "visible_if": "{{ block.settings.inherit_color_scheme == false }}"
+      "type": "select",
+      "id": "width",
+      "label": "t:settings.width_desktop",
+      "options": [
+        {
+          "value": "fit-content",
+          "label": "t:options.fit_content"
+        },
+        {
+          "value": "fill",
+          "label": "t:options.fill"
+        },
+        {
+          "value": "custom",
+          "label": "t:options.custom"
+        }
+      ],
+      "default": "fill"
+    },
+    {
+      "type": "range",
+      "id": "custom_width",
+      "label": "t:settings.custom_width",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "%",
+      "default": 100,
+      "visible_if": "{{ block.settings.width == 'custom' }}"
+    },
+    {
+      "type": "select",
+      "id": "width_mobile",
+      "label": "t:settings.width_mobile",
+      "options": [
+        {
+          "value": "fit-content",
+          "label": "t:options.fit_content"
+        },
+        {
+          "value": "fill",
+          "label": "t:options.fill"
+        },
+        {
+          "value": "custom",
+          "label": "t:options.custom"
+        }
+      ],
+      "default": "fill"
+    },
+    {
+      "type": "range",
+      "id": "custom_width_mobile",
+      "label": "t:settings.custom_width",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "%",
+      "default": 100,
+      "visible_if": "{{ block.settings.width_mobile == 'custom' }}"
     },
     {
       "type": "header",
-      "content": "t:content.borders"
+      "content": "t:content.appearance"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "t:settings.background_color",
+      "placeholder": "t:settings.default"
     },
     {
       "type": "select",
@@ -115,12 +183,20 @@
       "visible_if": "{{ block.settings.border != 'none' }}"
     },
     {
+      "type": "color",
+      "id": "border_color",
+      "label": "t:settings.color",
+      "placeholder": "t:settings.default",
+      "visible_if": "{{ block.settings.border != 'none' }}"
+    },
+    {
       "type": "range",
       "id": "border_radius",
       "label": "t:settings.border_radius",
       "min": 0,
       "max": 32,
       "step": 1,
+      "unit": "px",
       "default": 0
     },
     {
@@ -173,40 +249,69 @@
       "name": "t:names.product_card",
       "category": "t:categories.product",
       "settings": {
-        "product": "{{ closest.product }}"
+        "product_card_gap": 4
       },
       "blocks": {
         "product-card-gallery": {
           "type": "_product-card-gallery",
           "settings": {
-            "product": "{{ closest.product }}"
+            "image_ratio": "adapt",
+            "border": "none",
+            "border_width": 1,
+            "border_opacity": 100,
+            "border_radius": 0,
+            "padding-block-start": 0,
+            "padding-block-end": 0,
+            "padding-inline-start": 0,
+            "padding-inline-end": 0
           }
         },
-        "group": {
-          "type": "group",
+        "product_title": {
+          "type": "product-title",
+          "name": "t:names.product_title",
           "settings": {
-            "content_direction": "column"
-          },
-          "blocks": {
-            "product_title": {
-              "type": "product-title",
-              "settings": {
-                "product": "{{ closest.product }}",
-                "width": "100%",
-                "type_preset": "h5"
-              }
-            },
-            "price": {
-              "type": "price",
-              "settings": {
-                "product": "{{ closest.product }}"
-              }
-            }
-          },
-          "block_order": ["product_title", "price"]
+            "width": "fit-content",
+            "max_width": "normal",
+            "alignment": "left",
+            "type_preset": "paragraph",
+            "font": "var(--font-body--family)",
+            "font_size": "1rem",
+            "line_height": "normal",
+            "letter_spacing": "normal",
+            "case": "none",
+            "wrap": "pretty",
+            "background": false,
+            "background_color": "#00000026",
+            "corner_radius": 0,
+            "padding-block-start": 4,
+            "padding-block-end": 0,
+            "padding-inline-start": 0,
+            "padding-inline-end": 0
+          }
+        },
+        "price": {
+          "type": "price",
+          "name": "t:names.product_price",
+          "settings": {
+            "show_sale_price_first": true,
+            "show_installments": false,
+            "show_tax_info": false,
+            "type_preset": "h6",
+            "width": "100%",
+            "alignment": "left",
+            "font": "var(--font-body--family)",
+            "font_size": "1rem",
+            "line_height": "normal",
+            "letter_spacing": "normal",
+            "case": "none",
+            "padding-block-start": 0,
+            "padding-block-end": 0,
+            "padding-inline-start": 0,
+            "padding-inline-end": 0
+          }
         }
       },
-      "block_order": ["product-card-gallery", "group"]
+      "block_order": ["product-card-gallery", "product_title", "price"]
     }
   ]
 }

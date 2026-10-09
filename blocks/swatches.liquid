@@ -1,7 +1,8 @@
 
 
 {%- liquid
-  for product_option in block.settings.product.options_with_values
+  assign block_settings = block.settings
+  for product_option in closest.product.options_with_values
     assign swatch_count = product_option.values | map: 'swatch' | compact | size
 
     if swatch_count > 0
@@ -10,93 +11,36 @@
   endfor
 -%}
 
-{% if product_has_swatches %}
-  <product-swatches
-    data-product-id="{{ block.settings.product.id }}"
-    data-product-url="{{ block.settings.product.url }}"
-    style="
-      --overflow-list-alignment: {{ block.settings.product_swatches_alignment }};
-      --overflow-list-alignment-mobile: {{ block.settings.product_swatches_alignment_mobile }};
-      --product-swatches-alignment: {% if block.settings.product_swatches_alignment == 'flex-start' %}start{% elsif block.settings.product_swatches_alignment == 'flex-end' %}end{% else %}center{% endif %};
-      --product-swatches-alignment-mobile: {% if block.settings.product_swatches_alignment_mobile == 'flex-start' %}start{% elsif block.settings.product_swatches_alignment_mobile == 'flex-end' %}end{% else %}center{% endif %};
-      --product-swatches-padding-block-start: {{ block.settings.product_swatches_padding_top }}px;
-      --product-swatches-padding-block-end: {{ block.settings.product_swatches_padding_bottom }}px;
-      --product-swatches-padding-inline-start: {{ block.settings.product_swatches_padding_left }}px;
-      --product-swatches-padding-inline-end: {{ block.settings.product_swatches_padding_right }}px;
-    "
-    {{ block.shopify_attributes }}
-  >
-    {% render 'variant-swatches', product_resource: block.settings.product %}
-  </product-swatches>
-{% endif %}
-
-{% # theme-check-disable %}
 {% stylesheet %}
   product-swatches {
     width: 100%;
     display: flex;
-    justify-content: var(--product-swatches-alignment);
-    flex-direction: row;
     position: relative;
     overflow: hidden;
     gap: 0;
-
-    @media (width < 750px) {
-      justify-content: var(--product-swatches-alignment-mobile);
-    }
-  }
-
-  swatches-variant-picker-component {
-    display: flex;
-    width: 100%;
-    flex-direction: row;
-  }
-
-  swatches-variant-picker-component .variant-option--swatches {
-    padding-block: calc(
-        var(--product-swatches-padding-block-start) + var(--focus-outline-offset) + var(--focus-outline-width)
-      )
-      calc(var(--product-swatches-padding-block-end) + var(--focus-outline-offset) + var(--focus-outline-width));
-    padding-inline: calc(
-        var(--product-swatches-padding-inline-start) + var(--focus-outline-offset) + (1.5 * var(--focus-outline-width))
-      )
-      calc(var(--product-swatches-padding-inline-end) + var(--focus-outline-offset) + var(--focus-outline-width));
-  }
-
-  .variant-option--swatches {
-    overflow-list::part(list) {
-      gap: var(--gap-sm);
-    }
-
-    overflow-list[defer]::part(list) {
-      flex-wrap: nowrap;
-    }
-  }
-
-  .hidden-swatches__count {
-    display: flex;
-    align-self: center;
-    align-items: center;
-    justify-content: center;
-    color: rgb(from var(--color-foreground) r g b / 40%);
-    background-color: transparent;
-    padding: 0;
-    border: 0;
-    border-radius: 0;
-
-    &:before {
-      /* This doesn't work in Safari without the counter-reset. https://stackoverflow.com/a/40179718 */
-      counter-reset: overflow-count var(--overflow-count);
-      content: '+' counter(overflow-count);
-      line-height: 1;
-      cursor: pointer;
-    }
-  }
-
-  .hidden-swatches__count:hover {
-    color: rgb(from var(--color-foreground) r g b / 100%);
+    flex-shrink: 0;
   }
 {% endstylesheet %}
+
+{% if product_has_swatches %}
+  <product-swatches
+    data-product-id="{{ closest.product.id }}"
+    data-product-url="{{ closest.product.url }}"
+    style="
+      --overflow-list-alignment: {{ block_settings.product_swatches_alignment }};
+      --overflow-list-alignment-mobile: {{ block_settings.product_swatches_alignment_mobile }};
+      --product-swatches-alignment: {% if block_settings.product_swatches_alignment == 'flex-start' %}start{% elsif block_settings.product_swatches_alignment == 'flex-end' %}end{% else %}center{% endif %};
+      --product-swatches-alignment-mobile: {% if block_settings.product_swatches_alignment_mobile == 'flex-start' %}start{% elsif block_settings.product_swatches_alignment_mobile == 'flex-end' %}end{% else %}center{% endif %};
+      --product-swatches-padding-block-start: {{ block_settings.product_swatches_padding_top }}px;
+      --product-swatches-padding-block-end: {{ block_settings.product_swatches_padding_bottom }}px;
+      --product-swatches-padding-inline-start: {{ block_settings.product_swatches_padding_left }}px;
+      --product-swatches-padding-inline-end: {{ block_settings.product_swatches_padding_right }}px;
+    "
+    {{ block.shopify_attributes }}
+  >
+    {% render 'variant-swatches', product_resource: closest.product %}
+  </product-swatches>
+{% endif %}
 
 {% schema %}
 {
@@ -104,9 +48,8 @@
   "tag": null,
   "settings": [
     {
-      "type": "product",
-      "id": "product",
-      "label": "t:settings.product"
+      "type": "paragraph",
+      "content": "t:content.resource_reference_product_swatches"
     },
     {
       "type": "select",
@@ -208,12 +151,8 @@
   "presets": [
     {
       "name": "t:names.swatches",
-      "category": "t:categories.product",
-      "settings": {
-        "product": "{{ closest.product }}"
-      }
+      "category": "t:categories.product"
     }
   ]
 }
 {% endschema %}
-{% # theme-check-enable %}

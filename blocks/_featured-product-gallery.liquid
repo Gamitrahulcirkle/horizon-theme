@@ -1,6 +1,26 @@
 
 
-{% render 'card-gallery' %}
+{% liquid
+  assign product = closest.product
+%}
+
+{% capture children %}
+  {% unless product == blank %}
+    {% if product.available and settings.quick_add or settings.mobile_quick_add %}
+      {% render 'quick-add', product: product, section_id: section.id %}
+    {% endif %}
+  {% endunless %}
+{% endcapture %}
+
+{% render 'card-gallery', children: children %}
+
+{% stylesheet %}
+  .featured-product-section .card-gallery .quick-add__button {
+    position: absolute;
+    right: var(--quick-add-offset, var(--padding-sm));
+    bottom: var(--quick-add-offset, var(--padding-sm));
+  }
+{% endstylesheet %}
 
 {% schema %}
 {
@@ -8,13 +28,13 @@
   "tag": null,
   "settings": [
     {
-      "type": "product",
-      "id": "product",
-      "label": "t:settings.product"
+      "type": "paragraph",
+      "content": "t:content.resource_reference_product_media"
     },
     {
       "type": "select",
       "id": "image_ratio",
+      "label": "t:settings.aspect_ratio",
       "options": [
         {
           "value": "adapt",
@@ -33,8 +53,7 @@
           "label": "t:options.landscape"
         }
       ],
-      "default": "adapt",
-      "label": "t:settings.aspect_ratio"
+      "default": "adapt"
     },
     {
       "type": "select",

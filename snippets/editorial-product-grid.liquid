@@ -72,13 +72,22 @@
     /* Make the aspect ratio super high on width, then increase the height of
      * slideshow containers until they fill all the available space */
     .card-gallery {
+      /* stylelint-disable-next-line declaration-no-important */
       --gallery-aspect-ratio: 99 !important;
     }
 
     .card-gallery,
     slideshow-component,
     slideshow-container,
-    slideshow-slides {
+    slideshow-slides,
+    .product-media__image {
+      height: 100%;
+    }
+
+    /* Single-media cards skip the slideshow wrappers, so stretch the plain
+     * media container directly to fill the editorial cell. The multi-media
+     * container sits under slideshow-component and is unaffected. */
+    .card-gallery > a > .product-media-container {
       height: 100%;
     }
   }
@@ -87,7 +96,7 @@
     aspect-ratio: 1;
   }
 
-  @media (max-width: 768px) {
+  @media screen and (max-width: 749px) {
     .editorial-product__grid {
       display: flex;
       flex-direction: column;
@@ -103,16 +112,19 @@
       align-self: flex-start;
       aspect-ratio: 7 / 6;
     }
+
     .editorial-product__item-1 {
       width: 83%;
       align-self: flex-end;
       aspect-ratio: 4 / 5;
     }
+
     .editorial-product__item-2 {
       width: 66%;
       align-self: flex-start;
       aspect-ratio: 5 / 5;
     }
+
     .editorial-product__item-3 {
       width: 100%;
       aspect-ratio: 8 / 6;
